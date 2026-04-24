@@ -66,3 +66,29 @@ export interface TokenPayload {
   iat: number;
   exp: number;
 }
+
+export interface Investment {
+  id: string;
+  type: 'Plazo Fijo' | 'FCI' | 'Bono' | 'Acción' | 'Letra del Tesoro';
+  amount: number;
+  currency: 'ARS' | 'USD';
+  startDate: Date;
+  maturityDate: Date;
+  interestRate: number;
+  status: 'active' | 'matured' | 'liquidated';
+  institution: string;
+  ownerId: string;
+}
+
+export interface Transfer {
+  id: string;
+  amount: number;
+  currency: 'ARS' | 'USD';
+  originCbu: string;
+  destinationCbu: string;
+  destinationName: string;
+  description: string;
+  status: 'pending' | 'completed' | 'failed';
+  createdAt: Date;
+  completedAt?: Date;
+}
