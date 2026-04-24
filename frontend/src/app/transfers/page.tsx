@@ -1,364 +1,217 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const accounts = [
-  { id: 'gal', label: 'Galicia', type: 'CA', balance: 312450.0 },
-  { id: 'bru', label: 'Brubank', type: 'Digital', balance: 284870.5 },
-  { id: 'san', label: 'Santander', type: 'CA', balance: 250000.0 },
+  { id: 1, bank: 'Galicia', balance: 312450.0 },
+  { id: 2, bank: 'Brubank', balance: 284870.5 },
+  { id: 3, bank: 'Santander', balance: 250000.0 },
 ];
 
-const contacts = [
-  { initials: 'JR', name: 'Juan R.' },
+const recentContacts = [
+  { initials: 'JP', name: 'Juan P.' },
   { initials: 'MG', name: 'María G.' },
   { initials: 'PL', name: 'Pedro L.' },
   { initials: 'ES', name: 'Empresa SA' },
 ];
 
-const concepts = ['Varios', 'Alquiler', 'Honorarios', 'Cuota', 'Préstamo'];
-
-const history = [
-  { name: 'Juliana Torres', amount: '$25,000', time: 'hace 2 días' },
-  { name: 'Netflix AR', amount: '$4,200', time: 'hace 5 días' },
-  { name: 'Pedro López', amount: '$10,000', time: 'hace 1 semana' },
+const recentHistory = [
+  { name: 'Juliana Torres', detail: 'CBU 007', amount: 25000, when: 'hace 2 días' },
+  { name: 'Netflix AR', detail: 'CVU', amount: 4200, when: 'hace 5 días' },
+  { name: 'Pedro López', detail: 'alias pedrolo', amount: 10000, when: 'hace 1 semana' },
 ];
 
-const fmt = (n: number) =>
-  n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const conceptos = ['Varios', 'Alquiler', 'Honorarios', 'Cuota', 'Préstamo'];
 
 export default function TransfersPage() {
-  const [selectedAccount, setSelectedAccount] = useState('gal');
-  const [destination, setDestination] = useState('');
-  const [amount, setAmount] = useState('');
-  const [concept, setConcept] = useState('Varios');
-  const [selectedContact, setSelectedContact] = useState<string | null>(null);
+  const [fromAccount, setFromAccount] = useState(0);
+  const [toInput, setToInput] = useState('');
+  const [amount, setAmount] = useState('0.00');
+  const [concepto, setConcepto] = useState('Varios');
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [showConceptoMenu, setShowConceptoMenu] = useState(false);
 
-  const s: Record<string, React.CSSProperties> = {
-    page: {
-      backgroundColor: '#0A0A0F',
-      minHeight: '100vh',
-      paddingBottom: 80,
-      maxWidth: 430,
-      margin: '0 auto',
-      color: '#F1F5F9',
-      fontFamily: 'Inter, system-ui, sans-serif',
-    },
-    header: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '20px 20px 16px',
-    },
-    headerLeft: { display: 'flex', alignItems: 'center', gap: 10 },
-    backBtn: {
-      background: 'none',
-      border: 'none',
-      color: '#F1F5F9',
-      fontSize: 20,
-      cursor: 'pointer',
-      padding: 0,
-      lineHeight: 1,
-    },
-    headerTitle: { fontSize: 20, fontWeight: 700, color: '#F1F5F9', margin: 0 },
-    historyBtn: {
-      background: '#1E1E2E',
-      border: 'none',
-      borderRadius: 10,
-      padding: '8px 10px',
-      color: '#94A3B8',
-      cursor: 'pointer',
-      fontSize: 16,
-    },
-    section: { padding: '0 20px 16px' },
-    sectionLabel: {
-      fontSize: 12,
-      fontWeight: 600,
-      color: '#94A3B8',
-      textTransform: 'uppercase' as const,
-      letterSpacing: 1,
-      marginBottom: 10,
-    },
-    card: {
-      backgroundColor: '#12121A',
-      borderRadius: 16,
-      border: '1px solid #1E1E2E',
-      overflow: 'hidden',
-    },
-    selectEl: {
-      width: '100%',
-      backgroundColor: 'transparent',
-      border: 'none',
-      color: '#F1F5F9',
-      fontSize: 15,
-      padding: '16px',
-      cursor: 'pointer',
-      outline: 'none',
-      appearance: 'none' as const,
-      WebkitAppearance: 'none' as const,
-    },
-    selectWrapper: {
-      position: 'relative' as const,
-      backgroundColor: '#12121A',
-      borderRadius: 16,
-      border: '1px solid #1E1E2E',
-    },
-    selectArrow: {
-      position: 'absolute' as const,
-      right: 16,
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: '#94A3B8',
-      pointerEvents: 'none' as const,
-      fontSize: 14,
-    },
-    inputField: {
-      width: '100%',
-      backgroundColor: 'transparent',
-      border: 'none',
-      color: '#F1F5F9',
-      fontSize: 15,
-      padding: '16px',
-      outline: 'none',
-      boxSizing: 'border-box' as const,
-    },
-    contactsRow: {
-      display: 'flex',
-      gap: 12,
-      overflowX: 'auto' as const,
-      padding: '8px 20px 16px',
-      scrollbarWidth: 'none' as const,
-    },
-    contactChip: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'center',
-      gap: 6,
-      minWidth: 60,
-      cursor: 'pointer',
-    },
-    contactAvatar: {
-      width: 44,
-      height: 44,
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: 13,
-      fontWeight: 700,
-    },
-    contactName: { fontSize: 11, color: '#94A3B8', textAlign: 'center' as const },
-    amountSection: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'center',
-      padding: '8px 20px 20px',
-    },
-    amountLabel: { fontSize: 13, color: '#94A3B8', marginBottom: 8 },
-    amountRow: { display: 'flex', alignItems: 'center', gap: 4 },
-    amountSign: { fontSize: 36, fontWeight: 700, color: '#94A3B8', lineHeight: 1 },
-    amountInput: {
-      background: 'none',
-      border: 'none',
-      color: '#F1F5F9',
-      fontSize: 52,
-      fontWeight: 800,
-      width: '100%',
-      textAlign: 'center' as const,
-      outline: 'none',
-      caretColor: '#6C63FF',
-      fontVariantNumeric: 'tabular-nums' as const,
-    },
-    conceptRow: {
-      display: 'flex',
-      gap: 8,
-      overflowX: 'auto' as const,
-      padding: '0 20px 20px',
-      scrollbarWidth: 'none' as const,
-    },
-    conceptChip: {
-      padding: '8px 16px',
-      borderRadius: 20,
-      fontSize: 13,
-      fontWeight: 600,
-      cursor: 'pointer',
-      whiteSpace: 'nowrap' as const,
-      border: '1.5px solid transparent',
-      transition: 'all 0.15s',
-    },
-    ctaBtn: {
-      margin: '0 20px 24px',
-      width: 'calc(100% - 40px)',
-      backgroundColor: '#6C63FF',
-      border: 'none',
-      borderRadius: 16,
-      padding: '17px',
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: 700,
-      cursor: 'pointer',
-      boxSizing: 'border-box' as const,
-    },
-    historySection: { padding: '0 20px' },
-    historyTitle: {
-      fontSize: 14,
-      fontWeight: 600,
-      color: '#94A3B8',
-      textTransform: 'uppercase' as const,
-      letterSpacing: 1,
-      marginBottom: 12,
-    },
-    historyItem: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '14px 16px',
-      backgroundColor: '#12121A',
-      borderRadius: 14,
-      marginBottom: 8,
-      border: '1px solid #1E1E2E',
-    },
-    historyName: { fontSize: 15, fontWeight: 600, color: '#F1F5F9' },
-    historyTime: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
-    historyRight: { display: 'flex', alignItems: 'center', gap: 10 },
-    historyAmount: { fontSize: 15, fontWeight: 700, color: '#F1F5F9' },
-    historyArrow: { color: '#6C63FF', fontSize: 16 },
+  const handleAmountClick = (val: string) => {
+    if (val === '.') return; // decimal not supported in this simple input
+    setAmount((prev) => {
+      if (val === 'del') {
+        const cleaned = prev.replace(/[^0-9]/g, '');
+        const next = cleaned.slice(0, -1) || '0';
+        const num = parseInt(next, 10) / 100;
+        return num.toFixed(2);
+      }
+      const cleaned = prev.replace(/[^0-9]/g, '') + val;
+      const num = parseInt(cleaned, 10) / 100;
+      return num.toFixed(2);
+    });
   };
 
-  const selectedAcc = accounts.find((a) => a.id === selectedAccount)!;
-
   return (
-    <div style={s.page}>
+    <div style={{ background: '#0A0A0F', minHeight: '100vh', paddingBottom: '88px' }}>
       {/* Header */}
-      <div style={s.header}>
-        <div style={s.headerLeft}>
-          <button style={s.backBtn} aria-label="Volver">←</button>
-          <p style={s.headerTitle}>Transferir</p>
-        </div>
-        <button style={s.historyBtn} aria-label="Historial">🕐</button>
+      <div style={{ padding: '52px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#f1f5f9' }}>Transferir</h1>
+        <button style={{ background: 'none', border: 'none', padding: '8px', cursor: 'pointer', color: '#6C63FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Clock icon */}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        </button>
       </div>
 
-      {/* Desde */}
-      <div style={s.section}>
-        <p style={s.sectionLabel}>Desde</p>
-        <div style={s.selectWrapper}>
-          <select
-            style={s.selectEl}
-            value={selectedAccount}
-            onChange={(e) => setSelectedAccount(e.target.value)}
-          >
-            {accounts.map((acc) => (
-              <option key={acc.id} value={acc.id} style={{ backgroundColor: '#12121A' }}>
-                {acc.label} | {acc.type} | ${fmt(acc.balance)}
-              </option>
-            ))}
-          </select>
-          <span style={s.selectArrow}>▾</span>
-        </div>
-        <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 6, marginLeft: 4 }}>
-          Saldo disponible: ${fmt(selectedAcc.balance)}
-        </p>
-      </div>
+      <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-      {/* Para */}
-      <div style={s.section}>
-        <p style={s.sectionLabel}>Para</p>
-        <div style={s.card}>
-          <input
-            type="text"
-            style={s.inputField}
-            placeholder="CBU / CVU / Alias"
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Contacts */}
-      <div style={s.contactsRow}>
-        {contacts.map((c) => {
-          const isSelected = selectedContact === c.initials;
-          return (
-            <div
-              key={c.initials}
-              style={s.contactChip}
-              onClick={() => {
-                setSelectedContact(isSelected ? null : c.initials);
-                if (!isSelected) setDestination(c.name);
-              }}
-            >
-              <div
-                style={{
-                  ...s.contactAvatar,
-                  backgroundColor: isSelected ? '#6C63FF' : '#1E1E2E',
-                  color: isSelected ? '#fff' : '#94A3B8',
-                  border: isSelected ? '2px solid #6C63FF' : '2px solid transparent',
-                }}
-              >
-                {c.initials}
-              </div>
-              <span style={{ ...s.contactName, color: isSelected ? '#F1F5F9' : '#94A3B8' }}>
-                {c.name}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Amount */}
-      <div style={s.amountSection}>
-        <p style={s.amountLabel}>Ingresá el monto</p>
-        <div style={s.amountRow}>
-          <span style={s.amountSign}>$</span>
-          <input
-            type="number"
-            inputMode="decimal"
-            style={s.amountInput}
-            placeholder="0"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Concept */}
-      <div style={s.conceptRow}>
-        {concepts.map((c) => {
-          const active = concept === c;
-          return (
+        {/* Desde */}
+        <div style={{ background: '#12121A', borderRadius: '16px', padding: '16px', border: '1px solid rgba(108,99,255,0.12)' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Desde</p>
+          <div style={{ position: 'relative' }}>
             <button
-              key={c}
-              style={{
-                ...s.conceptChip,
-                backgroundColor: active ? '#6C63FF22' : '#12121A',
-                color: active ? '#6C63FF' : '#94A3B8',
-                borderColor: active ? '#6C63FF' : '#1E1E2E',
-              }}
-              onClick={() => setConcept(c)}
+              onClick={() => setShowAccountMenu(!showAccountMenu)}
+              style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(108,99,255,0.15)', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
             >
-              {c}
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ margin: 0, fontSize: '15px', color: '#f1f5f9', fontWeight: 600 }}>{accounts[fromAccount].bank}</p>
+                <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#6b7280' }}>
+                  ${accounts[fromAccount].balance.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </button>
-          );
-        })}
-      </div>
-
-      {/* CTA */}
-      <button style={s.ctaBtn}>Confirmar transferencia</button>
-
-      {/* History */}
-      <div style={s.historySection}>
-        <p style={s.historyTitle}>Recientes</p>
-        {history.map((h) => (
-          <div key={h.name} style={s.historyItem}>
-            <div>
-              <div style={s.historyName}>{h.name}</div>
-              <div style={s.historyTime}>{h.time}</div>
-            </div>
-            <div style={s.historyRight}>
-              <span style={s.historyAmount}>{h.amount}</span>
-              <span style={s.historyArrow}>→</span>
-            </div>
+            {showAccountMenu && (
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1a1a28', borderRadius: '12px', border: '1px solid rgba(108,99,255,0.2)', marginTop: '4px', zIndex: 10, overflow: 'hidden' }}>
+                {accounts.map((acc, idx) => (
+                  <button
+                    key={acc.id}
+                    onClick={() => { setFromAccount(idx); setShowAccountMenu(false); }}
+                    style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', borderBottom: idx < accounts.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}
+                  >
+                    <span style={{ fontSize: '14px', color: '#f1f5f9', fontWeight: 600 }}>{acc.bank}</span>
+                    <span style={{ fontSize: '13px', color: '#00D48B' }}>${acc.balance.toLocaleString('es-AR', { minimumFractionDigits: 0 })}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        ))}
+        </div>
+
+        {/* Para */}
+        <div style={{ background: '#12121A', borderRadius: '16px', padding: '16px', border: '1px solid rgba(108,99,255,0.12)' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Para</p>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              type="text"
+              value={toInput}
+              onChange={(e) => setToInput(e.target.value)}
+              placeholder="CBU, CVU o alias"
+              style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(108,99,255,0.15)', borderRadius: '12px', padding: '12px 14px', fontSize: '14px', color: '#f1f5f9', outline: 'none' }}
+            />
+            <button style={{ background: 'rgba(108,99,255,0.12)', border: '1px solid rgba(108,99,255,0.2)', borderRadius: '12px', padding: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6C63FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                <path d="M16 3.13a4 4 0 010 7.75" />
+              </svg>
+            </button>
+          </div>
+          {/* Recent contacts chips */}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '12px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+            {recentContacts.map((c) => (
+              <button
+                key={c.name}
+                onClick={() => setToInput(c.name.toLowerCase().replace(' ', ''))}
+                style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(108,99,255,0.08)', border: '1px solid rgba(108,99,255,0.18)', borderRadius: '20px', padding: '6px 12px', cursor: 'pointer' }}
+              >
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg, #6C63FF, #00D48B)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                  {c.initials}
+                </div>
+                <span style={{ fontSize: '12px', color: '#c4b5fd', fontWeight: 500, whiteSpace: 'nowrap' }}>{c.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Monto */}
+        <div style={{ background: '#12121A', borderRadius: '16px', padding: '16px', border: '1px solid rgba(108,99,255,0.12)', textAlign: 'center' }}>
+          <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monto</p>
+          <p style={{ margin: '0 0 16px', fontSize: '40px', fontWeight: 800, color: '#f1f5f9', letterSpacing: '-1px' }}>
+            ${parseFloat(amount).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+          </p>
+          {/* Numeric keyboard */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+            {['1','2','3','4','5','6','7','8','9','.','0','del'].map((key) => (
+              <button
+                key={key}
+                onClick={() => handleAmountClick(key)}
+                style={{ padding: '14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', fontSize: key === 'del' ? '16px' : '18px', color: key === 'del' ? '#FF4D6A' : '#f1f5f9', fontWeight: 600, cursor: 'pointer' }}
+              >
+                {key === 'del' ? '⌫' : key}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Concepto */}
+        <div style={{ background: '#12121A', borderRadius: '16px', padding: '16px', border: '1px solid rgba(108,99,255,0.12)', position: 'relative' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Concepto</p>
+          <button
+            onClick={() => setShowConceptoMenu(!showConceptoMenu)}
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(108,99,255,0.15)', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+          >
+            <span style={{ fontSize: '14px', color: '#f1f5f9', fontWeight: 500 }}>{concepto}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          {showConceptoMenu && (
+            <div style={{ position: 'absolute', top: '100%', left: 16, right: 16, background: '#1a1a28', borderRadius: '12px', border: '1px solid rgba(108,99,255,0.2)', marginTop: '4px', zIndex: 10, overflow: 'hidden' }}>
+              {conceptos.map((c, idx) => (
+                <button
+                  key={c}
+                  onClick={() => { setConcepto(c); setShowConceptoMenu(false); }}
+                  style={{ width: '100%', padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '14px', color: c === concepto ? '#6C63FF' : '#f1f5f9', fontWeight: c === concepto ? 700 : 400, borderBottom: idx < conceptos.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Transfer Button */}
+        <button
+          style={{ width: '100%', padding: '16px', background: '#6C63FF', borderRadius: '16px', border: 'none', fontSize: '16px', fontWeight: 700, color: '#fff', cursor: 'pointer', letterSpacing: '0.02em', boxShadow: '0 4px 20px rgba(108,99,255,0.35)' }}
+        >
+          Transferir ${parseFloat(amount).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+        </button>
+
+        {/* Recent history */}
+        <div style={{ marginTop: '8px' }}>
+          <p style={{ margin: '0 0 12px', fontSize: '15px', color: '#f1f5f9', fontWeight: 700 }}>Historial reciente</p>
+          <div style={{ background: '#12121A', borderRadius: '16px', border: '1px solid rgba(108,99,255,0.1)', overflow: 'hidden' }}>
+            {recentHistory.map((item, idx) => (
+              <div key={item.name} style={{ display: 'flex', alignItems: 'center', padding: '14px 16px', borderBottom: idx < recentHistory.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'rgba(108,99,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>
+                  👤
+                </div>
+                <div style={{ flex: 1, marginLeft: '12px' }}>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#f1f5f9', fontWeight: 600 }}>{item.name}</p>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#6b7280' }}>{item.detail} · {item.when}</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#FF4D6A', fontWeight: 700 }}>-${item.amount.toLocaleString('es-AR')}</p>
+                  <button style={{ background: 'rgba(108,99,255,0.12)', border: '1px solid rgba(108,99,255,0.2)', borderRadius: '8px', padding: '4px 10px', fontSize: '11px', color: '#6C63FF', fontWeight: 600, cursor: 'pointer', marginTop: '4px' }}>
+                    Repetir
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   );
