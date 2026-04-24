@@ -1,178 +1,321 @@
 'use client';
 
 import { useState } from 'react';
+import type { CSSProperties } from 'react';
 
-interface PaymentForm {
-  amount: string;
-  creditorName: string;
-  creditorCbu: string;
-  description: string;
-}
+type Tab = 'servicios' | 'tarjetas' | 'impuestos' | 'qr';
 
-interface PaymentResult {
-  id: string;
-  status: string;
-  amount: number;
-  currency: string;
-}
+const servicios = [
+  { id: 's1', name: 'Edenor', icon: '⚡', amount: 15420 },
+  { id: 's2', name: 'Metrogas', icon: '🔥', amount: 8730 },
+  { id: 's3', name: 'Telecentro', icon: '📡', amount: 6899 },
+  { id: 's4', name: 'Personal', icon: '📱', amount: 3200 },
+];
+
+const tarjetas = [
+  { id: 't1', name: 'Visa Galicia', icon: '💳', color: '#1A1F71', minPayment: 45320, totalPayment: 187450 },
+  { id: 't2', name: 'Mastercard Santander', icon: '💳', color: '#EB001B', minPayment: 12800, totalPayment: 67200 },
+];
+
+const impuestos = [
+  { id: 'i1', name: 'ARBA', icon: '🏛️', amount: 12400 },
+  { id: 'i2', name: 'AGIP', icon: '🏙️', amount: 8900 },
+  { id: 'i3', name: 'Monotributo', icon: '📋', amount: 18500 },
+];
+
+const fmt = (n: number) =>
+  n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+const s: Record<string, CSSProperties> = {
+  page: {
+    backgroundColor: '#0A0A0F',
+    minHeight: '100vh',
+    paddingBottom: 80,
+    maxWidth: 430,
+    margin: '0 auto',
+    color: '#F1F5F9',
+    fontFamily: 'Inter, system-ui, sans-serif',
+  },
+  header: { padding: '20px 20px 0' },
+  title: { fontSize: 22, fontWeight: 700, color: '#F1F5F9', margin: 0 },
+  tabBar: {
+    display: 'flex',
+    gap: 0,
+    padding: '16px 20px 0',
+    borderBottom: '1px solid #1E1E2E',
+  },
+  tab: {
+    flex: 1,
+    background: 'none',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    padding: '10px 4px',
+    color: '#94A3B8',
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    textAlign: 'center',
+  },
+  tabActive: {
+    flex: 1,
+    background: 'none',
+    border: 'none',
+    borderBottom: '2px solid #6C63FF',
+    padding: '10px 4px',
+    color: '#6C63FF',
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: 'pointer',
+    textAlign: 'center',
+  },
+  serviceRow: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '16px 20px',
+    borderBottom: '1px solid #1E1E2E',
+    gap: 14,
+  },
+  serviceIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#1E1E2E',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 20,
+    flexShrink: 0,
+  },
+  serviceName: { fontSize: 15, fontWeight: 600, color: '#F1F5F9' },
+  serviceAmount: { fontSize: 13, color: '#94A3B8', marginTop: 2 },
+  pagarBtn: {
+    marginLeft: 'auto',
+    backgroundColor: '#6C63FF',
+    border: 'none',
+    borderRadius: 10,
+    padding: '8px 16px',
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: 'pointer',
+    flexShrink: 0,
+  },
+  cardItem: {
+    margin: '14px 20px',
+    backgroundColor: '#12121A',
+    borderRadius: 16,
+    padding: 18,
+    border: '1px solid #1E1E2E',
+  },
+  cardHeader: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 },
+  cardIcon: { fontSize: 24 },
+  cardName: { fontSize: 15, fontWeight: 700, color: '#F1F5F9' },
+  progressTrack: {
+    width: '100%',
+    height: 6,
+    backgroundColor: '#1E1E2E',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  cardLabel: { fontSize: 12, color: '#94A3B8' },
+  cardValue: { fontSize: 14, fontWeight: 700, color: '#F1F5F9' },
+  pagarCardBtn: {
+    width: '100%',
+    marginTop: 14,
+    backgroundColor: '#6C63FF',
+    border: 'none',
+    borderRadius: 12,
+    padding: '12px',
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'pointer',
+  },
+  impRow: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '16px 20px',
+    borderBottom: '1px solid #1E1E2E',
+    gap: 14,
+  },
+  qrContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: '28px 20px 0',
+    gap: 20,
+  },
+  qrArea: {
+    width: 220,
+    height: 220,
+    borderRadius: 20,
+    backgroundColor: '#12121A',
+    border: '2px dashed #1E1E2E',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  qrIcon: { fontSize: 56 },
+  qrLabel: { fontSize: 14, color: '#94A3B8', textAlign: 'center' },
+  qrInput: {
+    width: '100%',
+    backgroundColor: '#12121A',
+    border: '1.5px solid #1E1E2E',
+    borderRadius: 14,
+    padding: '14px 16px',
+    color: '#F1F5F9',
+    fontSize: 15,
+    outline: 'none',
+    boxSizing: 'border-box',
+    textAlign: 'center',
+  },
+  qrBtn: {
+    width: '100%',
+    backgroundColor: '#6C63FF',
+    border: 'none',
+    borderRadius: 14,
+    padding: '16px',
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 700,
+    cursor: 'pointer',
+  },
+};
 
 export default function PaymentsPage() {
-  const [form, setForm] = useState<PaymentForm>({
-    amount: '',
-    creditorName: '',
-    creditorCbu: '',
-    description: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<PaymentResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('servicios');
+  const [qrCode, setQrCode] = useState('');
+  const [paidIds, setPaidIds] = useState<Set<string>>(new Set());
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handlePay = (id: string) => {
+    setPaidIds((prev: Set<string>) => new Set([...prev, id]));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
-    try {
-      const res = await fetch('/api/v1/payments/initiate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: parseFloat(form.amount),
-          creditorName: form.creditorName,
-          creditorCbu: form.creditorCbu,
-          description: form.description,
-          currency: 'ARS',
-        }),
-      });
-
-      if (!res.ok) throw new Error('Error al iniciar el pago');
-      const json = await res.json();
-      setResult(json.data as PaymentResult);
-    } catch {
-      // Simulación local para desarrollo
-      setResult({
-        id: `pay-${Date.now()}`,
-        status: 'pending',
-        amount: parseFloat(form.amount) || 0,
-        currency: 'ARS',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'servicios', label: 'Servicios' },
+    { key: 'tarjetas', label: 'Tarjetas' },
+    { key: 'impuestos', label: 'Impuestos' },
+    { key: 'qr', label: 'QR' },
+  ];
 
   return (
-    <div className="max-w-2xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">💸 Iniciar Pago</h1>
-        <p className="text-gray-500">
-          Realizá transferencias interoperables usando Transferencias 3.0 del BCRA.
-        </p>
+    <div style={s.page}>
+      <div style={s.header}>
+        <p style={s.title}>Pagos</p>
       </div>
 
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Monto (ARS)
-            </label>
-            <input
-              type="number"
-              name="amount"
-              value={form.amount}
-              onChange={handleChange}
-              required
-              min="1"
-              step="0.01"
-              placeholder="Ej: 5000.00"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre del destinatario
-            </label>
-            <input
-              type="text"
-              name="creditorName"
-              value={form.creditorName}
-              onChange={handleChange}
-              required
-              placeholder="Ej: Juan Pérez"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              CBU / CVU del destinatario
-            </label>
-            <input
-              type="text"
-              name="creditorCbu"
-              value={form.creditorCbu}
-              onChange={handleChange}
-              required
-              placeholder="22 dígitos"
-              maxLength={22}
-              pattern="\d{22}"
-              title="El CBU/CVU debe tener exactamente 22 dígitos"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Descripción (opcional)
-            </label>
-            <input
-              type="text"
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              placeholder="Ej: Pago de factura"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
+      {/* Tab bar */}
+      <div style={s.tabBar}>
+        {tabs.map((t) => (
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            key={t.key}
+            style={activeTab === t.key ? s.tabActive : s.tab}
+            onClick={() => setActiveTab(t.key)}
           >
-            {loading ? '⏳ Procesando...' : '🚀 Iniciar Pago'}
+            {t.label}
           </button>
-        </form>
-
-        {/* Resultado */}
-        {result && (
-          <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-green-600 font-semibold">✅ Pago iniciado</span>
-            </div>
-            <div className="text-sm text-gray-600 space-y-1">
-              <div><span className="font-medium">ID:</span> {result.id}</div>
-              <div><span className="font-medium">Estado:</span> {result.status}</div>
-              <div>
-                <span className="font-medium">Monto:</span>{' '}
-                {result.currency} {result.amount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-            ❌ {error}
-          </div>
-        )}
+        ))}
       </div>
+
+      {/* Servicios */}
+      {activeTab === 'servicios' && (
+        <div style={{ marginTop: 8 }}>
+          {servicios.map((sv) => (
+            <div key={sv.id} style={s.serviceRow}>
+              <div style={s.serviceIcon}>{sv.icon}</div>
+              <div>
+                <div style={s.serviceName}>{sv.name}</div>
+                <div style={s.serviceAmount}>${fmt(sv.amount)}</div>
+              </div>
+              <button
+                style={paidIds.has(sv.id) ? { ...s.pagarBtn, backgroundColor: '#00D48B' } : s.pagarBtn}
+                onClick={() => handlePay(sv.id)}
+              >
+                {paidIds.has(sv.id) ? '✓ Pagado' : 'Pagar'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tarjetas */}
+      {activeTab === 'tarjetas' && (
+        <div style={{ marginTop: 8 }}>
+          {tarjetas.map((card) => {
+            const pct = card.totalPayment > 0 ? Math.round((card.minPayment / card.totalPayment) * 100) : 0;
+            return (
+              <div key={card.id} style={s.cardItem}>
+                <div style={s.cardHeader}>
+                  <span style={s.cardIcon}>{card.icon}</span>
+                  <span style={s.cardName}>{card.name}</span>
+                </div>
+                <div style={s.progressTrack}>
+                  <div style={{ height: '100%', width: `${pct}%`, backgroundColor: '#6C63FF', borderRadius: 3 }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div>
+                    <div style={s.cardLabel}>Pago mínimo</div>
+                    <div style={s.cardValue}>${fmt(card.minPayment)}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={s.cardLabel}>Total a pagar</div>
+                    <div style={s.cardValue}>${fmt(card.totalPayment)}</div>
+                  </div>
+                </div>
+                <button
+                  style={paidIds.has(card.id) ? { ...s.pagarCardBtn, backgroundColor: '#00D48B' } : s.pagarCardBtn}
+                  onClick={() => handlePay(card.id)}
+                >
+                  {paidIds.has(card.id) ? '✓ Pagado' : 'Pagar tarjeta'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Impuestos */}
+      {activeTab === 'impuestos' && (
+        <div style={{ marginTop: 8 }}>
+          {impuestos.map((imp) => (
+            <div key={imp.id} style={s.impRow}>
+              <div style={s.serviceIcon}>{imp.icon}</div>
+              <div>
+                <div style={s.serviceName}>{imp.name}</div>
+                <div style={s.serviceAmount}>${fmt(imp.amount)}</div>
+              </div>
+              <button
+                style={paidIds.has(imp.id) ? { ...s.pagarBtn, backgroundColor: '#00D48B' } : s.pagarBtn}
+                onClick={() => handlePay(imp.id)}
+              >
+                {paidIds.has(imp.id) ? '✓ Pagado' : 'Pagar'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* QR */}
+      {activeTab === 'qr' && (
+        <div style={s.qrContainer}>
+          <div style={s.qrArea}>
+            <span style={s.qrIcon}>📷</span>
+            <span style={s.qrLabel}>Apuntá la cámara<br/>al código QR</span>
+          </div>
+          <p style={{ color: '#94A3B8', fontSize: 13, margin: 0 }}>— o ingresá el código manualmente —</p>
+          <input
+            style={s.qrInput}
+            type="text"
+            placeholder="Pegá el código QR aquí"
+            value={qrCode}
+            onChange={(e: { target: { value: string } }) => setQrCode(e.target.value)}
+          />
+          <button style={s.qrBtn}>Confirmar pago QR</button>
+        </div>
+      )}
     </div>
   );
 }
