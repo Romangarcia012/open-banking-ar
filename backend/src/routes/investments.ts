@@ -61,8 +61,8 @@ const mockInvestments: Investment[] = [
     name: 'LEDE — Letra del Tesoro',
     amount: 300000.00,
     currency: 'ARS',
-    startDate: new Date('2024-03-01'),
-    maturityDate: new Date('2024-09-01'),
+    startDate: new Date('2023-09-01'),
+    maturityDate: new Date('2024-03-01'),
     interestRate: 118.00,
     annualReturn: 118.00,
     status: 'matured',
@@ -101,7 +101,7 @@ router.get('/:id', (req: Request, res: Response) => {
  * Crea una nueva posición de inversión.
  */
 router.post('/', (req: Request, res: Response) => {
-  const { type, name, amount, currency, startDate, maturityDate, interestRate, institution } = req.body;
+  const { type, name, amount, currency, startDate, maturityDate, interestRate, annualReturn, institution } = req.body;
 
   // Validaciones
   if (!type) {
@@ -136,7 +136,7 @@ router.post('/', (req: Request, res: Response) => {
     startDate: startDate ? new Date(startDate) : new Date(),
     maturityDate: maturityDate ? new Date(maturityDate) : undefined,
     interestRate: interestRate ?? undefined,
-    annualReturn: interestRate ?? 0,
+    annualReturn: annualReturn ?? interestRate ?? 0,
     status: 'active',
     institution,
   };
