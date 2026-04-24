@@ -80,6 +80,10 @@ export default function AccountsPage() {
     navigator.clipboard.writeText(cbu).then(() => {
       setCopiedCbu(id);
       setTimeout(() => setCopiedCbu(null), 2000);
+    }).catch(() => {
+      // Fallback: show a brief visual indication that copy failed
+      setCopiedCbu(id + '_err');
+      setTimeout(() => setCopiedCbu(null), 2000);
     });
   };
 

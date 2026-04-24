@@ -32,6 +32,7 @@ export default function TransfersPage() {
   const [showConceptoMenu, setShowConceptoMenu] = useState(false);
 
   const handleAmountClick = (val: string) => {
+    if (val === '.') return; // decimal not supported in this simple input
     setAmount((prev) => {
       if (val === 'del') {
         const cleaned = prev.replace(/[^0-9]/g, '');

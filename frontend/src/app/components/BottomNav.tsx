@@ -98,6 +98,7 @@ export default function BottomNav() {
               borderRadius: '12px',
               transition: 'all 0.2s',
               color: isActive ? '#6C63FF' : '#6b7280',
+              position: 'relative',
             }}
           >
             <span style={{ color: isActive ? '#6C63FF' : '#6b7280', transition: 'color 0.2s' }}>

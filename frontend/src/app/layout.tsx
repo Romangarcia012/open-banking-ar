@@ -11,7 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body style={{ margin: 0, padding: 0, background: '#0A0A0F', color: '#f1f5f9', fontFamily: 'Inter, system-ui, sans-serif', overflowX: 'hidden' }}>
         {children}
