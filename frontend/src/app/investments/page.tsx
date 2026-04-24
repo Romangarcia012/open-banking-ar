@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 const positions = [
   { name: 'FCI Mercado Pago', type: 'Fondo Común', amount: 150000, return: '+8.2% anual', color: '#6C63FF' },
   { name: 'Cedear Apple', type: 'Cedear', amount: 120000, return: '+15.4% YTD', color: '#F59E0B' },
