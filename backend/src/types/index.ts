@@ -69,28 +69,29 @@ export interface TokenPayload {
 
 export interface Investment {
   id: string;
-  type: 'Plazo Fijo' | 'FCI' | 'Cedear' | 'Bono' | 'Accion' | 'Letra del Tesoro';
+  type: 'plazo_fijo' | 'fci' | 'bono' | 'accion' | 'letra_tesoro';
   name: string;
-  institution: string;
   amount: number;
   currency: string;
-  interestRate: number | null;
+  startDate: Date;
+  maturityDate?: Date;
+  interestRate?: number;
   annualReturn: number;
-  startDate: string;
-  maturityDate: string | null;
   status: 'active' | 'matured' | 'liquidated';
+  institution: string;
 }
 
 export interface Transfer {
   id: string;
-  originCbu: string;
-  destinationCbu: string;
-  destinationName: string;
   amount: number;
   currency: string;
-  concept: 'VAR' | 'ALQ' | 'HON' | 'CUO' | 'PRE';
+  originCbu: string;
+  destinationCbu: string;
+  destinationAlias?: string;
+  destinationName: string;
   description?: string;
-  status: 'pending' | 'completed' | 'failed' | 'reversed';
+  concept: 'VAR' | 'ALQ' | 'HON' | 'FAM' | 'SUE' | 'CUO' | 'SEG' | 'PRE' | 'OTR';
+  status: 'pending' | 'completed' | 'failed';
   createdAt: Date;
-  executedAt?: Date;
+  completedAt?: Date;
 }

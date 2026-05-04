@@ -3,63 +3,77 @@ import { Investment } from '../types';
 
 const router = Router();
 
-// Datos mock de inversiones
+// Datos mock de inversiones (instrumentos financieros argentinos)
 const mockInvestments: Investment[] = [
   {
     id: 'inv-001',
-    type: 'Plazo Fijo',
-    name: 'PF Galicia 30d',
-    institution: 'Banco Galicia',
-    amount: 50000,
+    type: 'plazo_fijo',
+    name: 'Plazo Fijo 30 días — Galicia',
+    amount: 500000.00,
     currency: 'ARS',
-    interestRate: 72,
-    annualReturn: 72,
-    startDate: '2026-03-25',
-    maturityDate: '2026-04-24',
+    startDate: new Date('2024-04-01'),
+    maturityDate: new Date('2024-05-01'),
+    interestRate: 110.00,
+    annualReturn: 110.00,
     status: 'active',
+    institution: 'Banco Galicia',
   },
   {
     id: 'inv-002',
-    type: 'FCI',
-    name: 'FCI Mercado Pago',
-    institution: 'Mercado Pago',
-    amount: 150000,
+    type: 'fci',
+    name: 'FCI Renta Mixta — Santander',
+    amount: 200000.00,
     currency: 'ARS',
-    interestRate: 85,
-    annualReturn: 85,
-    startDate: '2026-01-01',
-    maturityDate: null,
+    startDate: new Date('2024-03-15'),
+    interestRate: undefined,
+    annualReturn: 95.50,
     status: 'active',
+    institution: 'Santander Argentina',
   },
   {
     id: 'inv-003',
-    type: 'Cedear',
-    name: 'AAPL Cedear',
-    institution: 'Balanz',
-    amount: 120000,
+    type: 'bono',
+    name: 'Bono AL30 — Mercado Pago',
+    amount: 150000.00,
     currency: 'ARS',
-    interestRate: null,
-    annualReturn: 15.4,
-    startDate: '2025-11-01',
-    maturityDate: null,
+    startDate: new Date('2024-01-10'),
+    maturityDate: new Date('2030-07-09'),
+    interestRate: 8.75,
+    annualReturn: 12.30,
     status: 'active',
+    institution: 'Mercado Pago',
   },
   {
     id: 'inv-004',
-    type: 'Bono',
-    name: 'AL30 Bono Soberano',
-    institution: 'IOL',
-    amount: 100000,
+    type: 'accion',
+    name: 'YPF S.A. — YPFD',
+    amount: 75000.00,
     currency: 'ARS',
-    interestRate: null,
-    annualReturn: 9.1,
-    startDate: '2025-09-15',
-    maturityDate: null,
+    startDate: new Date('2024-02-20'),
+    interestRate: undefined,
+    annualReturn: 45.80,
     status: 'active',
+    institution: 'Brubank',
+  },
+  {
+    id: 'inv-005',
+    type: 'letra_tesoro',
+    name: 'LEDE — Letra del Tesoro',
+    amount: 300000.00,
+    currency: 'ARS',
+    startDate: new Date('2023-09-01'),
+    maturityDate: new Date('2024-03-01'),
+    interestRate: 118.00,
+    annualReturn: 118.00,
+    status: 'matured',
+    institution: 'Ualá',
   },
 ];
 
-// GET / — listar inversiones del usuario
+/**
+ * GET /api/v1/investments
+ * Lista todas las inversiones del usuario autenticado.
+ */
 router.get('/', (_req: Request, res: Response) => {
   res.json({
     data: mockInvestments,
@@ -69,9 +83,12 @@ router.get('/', (_req: Request, res: Response) => {
   });
 });
 
-// GET /:id — detalle de una inversión
+/**
+ * GET /api/v1/investments/:id
+ * Retorna el detalle de una inversión por su identificador.
+ */
 router.get('/:id', (req: Request, res: Response) => {
-  const investment = mockInvestments.find((i) => i.id === req.params.id);
+  const investment = mockInvestments.find((inv) => inv.id === req.params.id);
   if (!investment) {
     res.status(404).json({ error: 'Inversión no encontrada' });
     return;
@@ -79,56 +96,70 @@ router.get('/:id', (req: Request, res: Response) => {
   res.json({ data: investment });
 });
 
-// POST / — crear una nueva inversión
+/**
+ * POST /api/v1/investments
+ * Crea una nueva posición de inversión.
+ */
 router.post('/', (req: Request, res: Response) => {
-  const { type, name, institution, amount, currency, interestRate, annualReturn, startDate, maturityDate } = req.body;
+  const { type, name, amount, currency, startDate, maturityDate, interestRate, annualReturn, institution } = req.body;
 
+  // Validaciones
   if (!type) {
     res.status(400).json({ error: 'El campo "type" es requerido' });
     return;
   }
-  if (!name) {
-    res.status(400).json({ error: 'El campo "name" es requerido' });
+
+  const validTypes = ['plazo_fijo', 'fci', 'bono', 'accion', 'letra_tesoro'];
+  if (!validTypes.includes(type)) {
+    res.status(400).json({
+      error: `Tipo de inversión inválido. Valores permitidos: ${validTypes.join(', ')}`,
+    });
     return;
   }
+
+  if (!amount || typeof amount !== 'number' || amount <= 0) {
+    res.status(400).json({ error: 'El campo "amount" debe ser un número mayor a cero' });
+    return;
+  }
+
   if (!institution) {
     res.status(400).json({ error: 'El campo "institution" es requerido' });
     return;
   }
-  if (amount == null || amount <= 0) {
-    res.status(400).json({ error: 'El monto debe ser mayor a cero' });
-    return;
-  }
-  if (!startDate) {
-    res.status(400).json({ error: 'El campo "startDate" es requerido' });
-    return;
-  }
 
-  const investment: Investment = {
+  const newInvestment: Investment = {
     id: `inv-${Date.now()}`,
-    type,
-    name,
-    institution,
+    type: type as Investment['type'],
+    name: name || `${type} — ${institution}`,
     amount,
     currency: currency || 'ARS',
-    interestRate: interestRate ?? null,
-    annualReturn: annualReturn || 0,
-    startDate,
-    maturityDate: maturityDate || null,
+    startDate: startDate ? new Date(startDate) : new Date(),
+    maturityDate: maturityDate ? new Date(maturityDate) : undefined,
+    interestRate: interestRate ?? undefined,
+    annualReturn: annualReturn ?? interestRate ?? 0,
     status: 'active',
+    institution,
   };
 
   res.status(201).json({
-    data: investment,
-    message: 'Inversión creada correctamente.',
+    data: newInvestment,
+    message: 'Posición de inversión creada correctamente.',
   });
 });
 
-// DELETE /:id — liquidar una inversión
+/**
+ * DELETE /api/v1/investments/:id
+ * Cierra o liquida una inversión existente.
+ */
 router.delete('/:id', (req: Request, res: Response) => {
-  const investment = mockInvestments.find((i) => i.id === req.params.id);
+  const investment = mockInvestments.find((inv) => inv.id === req.params.id);
   if (!investment) {
     res.status(404).json({ error: 'Inversión no encontrada' });
+    return;
+  }
+
+  if (investment.status === 'liquidated') {
+    res.status(409).json({ error: 'La inversión ya fue liquidada previamente' });
     return;
   }
 

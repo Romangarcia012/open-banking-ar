@@ -3,77 +3,70 @@ import { Transfer } from '../types';
 
 const router = Router();
 
-const CBU_LENGTH = 22;
+// Regex para validar el formato CBU argentino: exactamente 22 dígitos
+const CBU_REGEX = /^\d{22}$/;
 
-// Datos mock de historial de transferencias
+// Datos mock de transferencias
 const mockTransfers: Transfer[] = [
   {
-    id: 'trf-001',
+    id: 'trx-001',
+    amount: 25000.00,
+    currency: 'ARS',
     originCbu: '0070000020000000000001',
     destinationCbu: '0290000030000000000099',
+    destinationAlias: 'JUAN.PEREZ.MP',
     destinationName: 'Juan Pérez',
-    amount: 15000.00,
-    currency: 'ARS',
-    concept: 'VAR',
-    description: 'Varios',
-    status: 'completed',
-    createdAt: new Date('2026-04-01T10:30:00Z'),
-    executedAt: new Date('2026-04-01T10:30:05Z'),
-  },
-  {
-    id: 'trf-002',
-    originCbu: '0070000020000000000001',
-    destinationCbu: '0140999903385001234567',
-    destinationName: 'Inmobiliaria Norte SA',
-    amount: 85000.00,
-    currency: 'ARS',
+    description: 'Pago alquiler mayo',
     concept: 'ALQ',
-    description: 'Alquiler abril 2026',
     status: 'completed',
-    createdAt: new Date('2026-04-03T09:00:00Z'),
-    executedAt: new Date('2026-04-03T09:00:08Z'),
+    createdAt: new Date('2024-05-01T10:00:00'),
+    completedAt: new Date('2024-05-01T10:00:45'),
   },
   {
-    id: 'trf-003',
-    originCbu: '0070000020000000000001',
-    destinationCbu: '0070999900000000123456',
-    destinationName: 'Estudio Jurídico Fernández',
-    amount: 30000.00,
+    id: 'trx-002',
+    amount: 8500.00,
     currency: 'ARS',
+    originCbu: '0070000020000000000001',
+    destinationCbu: '0150000030000000000015',
+    destinationAlias: 'MARIA.GONZALEZ',
+    destinationName: 'María González',
+    description: 'Honorarios consultoría',
     concept: 'HON',
-    description: 'Honorarios servicios legales',
     status: 'completed',
-    createdAt: new Date('2026-04-10T14:15:00Z'),
-    executedAt: new Date('2026-04-10T14:15:03Z'),
+    createdAt: new Date('2024-05-03T14:30:00'),
+    completedAt: new Date('2024-05-03T14:30:30'),
   },
   {
-    id: 'trf-004',
-    originCbu: '0070000020000000000001',
-    destinationCbu: '0110003900030000123456',
-    destinationName: 'Banco Nación — Préstamo',
-    amount: 12500.00,
+    id: 'trx-003',
+    amount: 150000.00,
     currency: 'ARS',
-    concept: 'PRE',
-    description: 'Cuota préstamo personal',
-    status: 'completed',
-    createdAt: new Date('2026-04-15T08:00:00Z'),
-    executedAt: new Date('2026-04-15T08:00:02Z'),
-  },
-  {
-    id: 'trf-005',
     originCbu: '0070000020000000000001',
-    destinationCbu: '0290055540000000987654',
-    destinationName: 'Club Deportivo San Martín',
-    amount: 4500.00,
-    currency: 'ARS',
-    concept: 'CUO',
-    description: 'Cuota mensual club',
+    destinationCbu: '3220001812000025687419',
+    destinationAlias: 'BRUBANK.AHORRO',
+    destinationName: 'Carlos Rodríguez',
+    description: 'Transferencia personal',
+    concept: 'VAR',
     status: 'pending',
-    createdAt: new Date('2026-04-20T11:45:00Z'),
+    createdAt: new Date('2024-05-10T09:15:00'),
+  },
+  {
+    id: 'trx-004',
+    amount: 3200.00,
+    currency: 'ARS',
+    originCbu: '0070000020000000000001',
+    destinationCbu: '4530000800008300025891',
+    destinationName: 'Lucía Fernández',
+    description: 'Cuota préstamo',
+    concept: 'CUO',
+    status: 'failed',
+    createdAt: new Date('2024-05-08T18:00:00'),
   },
 ];
 
-// GET / — listar historial de transferencias
+/**
+ * GET /api/v1/transfers
+ * Lista el historial de transferencias del usuario autenticado.
+ */
 router.get('/', (_req: Request, res: Response) => {
   res.json({
     data: mockTransfers,
@@ -83,7 +76,10 @@ router.get('/', (_req: Request, res: Response) => {
   });
 });
 
-// GET /:id — detalle de una transferencia
+/**
+ * GET /api/v1/transfers/:id
+ * Retorna el detalle de una transferencia por su identificador.
+ */
 router.get('/:id', (req: Request, res: Response) => {
   const transfer = mockTransfers.find((t) => t.id === req.params.id);
   if (!transfer) {
@@ -93,56 +89,91 @@ router.get('/:id', (req: Request, res: Response) => {
   res.json({ data: transfer });
 });
 
-// POST /initiate — iniciar una nueva transferencia
+/**
+ * POST /api/v1/transfers/initiate
+ * Inicia una nueva transferencia bancaria.
+ * Valida CBU de 22 dígitos conforme estándares BCRA.
+ */
 router.post('/initiate', (req: Request, res: Response) => {
-  const { originCbu, destinationCbu, destinationName, amount, currency, concept, description } = req.body;
+  const {
+    amount,
+    currency,
+    originCbu,
+    destinationCbu,
+    destinationAlias,
+    destinationName,
+    description,
+    concept,
+  } = req.body;
 
+  // Validación: monto requerido y mayor a cero
+  if (amount === undefined || amount === null) {
+    res.status(400).json({ error: 'El campo "amount" es requerido' });
+    return;
+  }
+  if (typeof amount !== 'number' || amount <= 0) {
+    res.status(400).json({ error: 'El campo "amount" debe ser un número mayor a cero' });
+    return;
+  }
+
+  // Validación: CBU origen requerido y formato válido
   if (!originCbu) {
     res.status(400).json({ error: 'El campo "originCbu" es requerido' });
     return;
   }
-  if (String(originCbu).length !== CBU_LENGTH || !/^\d+$/.test(String(originCbu))) {
-    res.status(400).json({ error: 'El CBU de origen debe tener exactamente 22 dígitos numéricos' });
+  if (!CBU_REGEX.test(originCbu)) {
+    res.status(400).json({ error: 'El campo "originCbu" debe contener exactamente 22 dígitos (formato BCRA)' });
     return;
   }
+
+  // Validación: CBU destino requerido y formato válido
   if (!destinationCbu) {
     res.status(400).json({ error: 'El campo "destinationCbu" es requerido' });
     return;
   }
-  if (String(destinationCbu).length !== CBU_LENGTH || !/^\d+$/.test(String(destinationCbu))) {
-    res.status(400).json({ error: 'El CBU de destino debe tener exactamente 22 dígitos numéricos' });
+  if (!CBU_REGEX.test(destinationCbu)) {
+    res.status(400).json({ error: 'El campo "destinationCbu" debe contener exactamente 22 dígitos (formato BCRA)' });
     return;
   }
-  if (!destinationName) {
+
+  // Validación: no transferir a sí mismo
+  if (originCbu === destinationCbu) {
+    res.status(400).json({ error: 'El CBU de origen y destino no pueden ser iguales' });
+    return;
+  }
+
+  // Validación: nombre del destinatario requerido
+  if (!destinationName || typeof destinationName !== 'string' || destinationName.trim() === '') {
     res.status(400).json({ error: 'El campo "destinationName" es requerido' });
     return;
   }
-  if (amount == null || amount <= 0) {
-    res.status(400).json({ error: 'El monto debe ser mayor a cero' });
+
+  // Validación: concepto válido
+  const validConcepts = ['VAR', 'ALQ', 'HON', 'FAM', 'SUE', 'CUO', 'SEG', 'PRE', 'OTR'];
+  const selectedConcept = concept || 'OTR';
+  if (!validConcepts.includes(selectedConcept)) {
+    res.status(400).json({
+      error: `Concepto inválido. Valores permitidos: ${validConcepts.join(', ')}`,
+    });
     return;
   }
 
-  const validConcepts = ['VAR', 'ALQ', 'HON', 'CUO', 'PRE'];
-  if (concept && !validConcepts.includes(concept)) {
-    res.status(400).json({ error: `El concepto debe ser uno de: ${validConcepts.join(', ')}` });
-    return;
-  }
-
-  const transfer: Transfer = {
-    id: `trf-${Date.now()}`,
-    originCbu,
-    destinationCbu,
-    destinationName,
+  const newTransfer: Transfer = {
+    id: `trx-${Date.now()}`,
     amount,
     currency: currency || 'ARS',
-    concept: concept || 'VAR',
+    originCbu,
+    destinationCbu,
+    destinationAlias: destinationAlias || undefined,
+    destinationName: destinationName.trim(),
     description: description || undefined,
+    concept: selectedConcept as Transfer['concept'],
     status: 'pending',
     createdAt: new Date(),
   };
 
   res.status(201).json({
-    data: transfer,
+    data: newTransfer,
     message: 'Transferencia iniciada correctamente. Pendiente de acreditación.',
   });
 });
