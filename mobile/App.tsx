@@ -15,10 +15,10 @@ export default function App() {
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={{
-          headerShown: false as boolean,
           tabBarStyle: { backgroundColor: '#1a1a1a', borderTopColor: '#2a2a2a', paddingBottom: 5, height: 60 },
           tabBarActiveTintColor: '#00d4aa',
           tabBarInactiveTintColor: '#555555',
+          tabBarShowLabel: true,
         }}
       >
         <Tab.Screen name="Inicio" component={DashboardScreen} options={{ tabBarIcon: () => <Text style={{ fontSize: 20 }}>🏠</Text> }} />
