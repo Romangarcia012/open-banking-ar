@@ -5,6 +5,7 @@ import consentRouter from './consent';
 import authRouter from './auth';
 import investmentsRouter from './investments';
 import transfersRouter from './transfers';
+import externalAccountsRouter from './externalAccounts';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/api/v1/consent', consentRouter);
 router.use('/api/v1/auth', authRouter);
 router.use('/api/v1/investments', investmentsRouter);
 router.use('/api/v1/transfers', transfersRouter);
+router.use('/api/v1/external-accounts', externalAccountsRouter);
 
 export default router;
